@@ -217,9 +217,10 @@ app.delete('/api/posts/:id', (req, res) => {
 });
 
 // =========================
-// Frontend Route
+// Frontend Route (수정)
 // =========================
-app.get('/', (req, res) => {
+// 모든 요청을 index.html로 보내기 (SPA 방식)
+app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
