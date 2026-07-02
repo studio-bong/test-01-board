@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>프리미엄 웹 게시판 (Simple Board)</title>
+  <!-- Google Fonts - Inter & Noto Sans KR -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap"
+    rel="stylesheet">
+  <!-- Lucide Icons (CDN) for beautiful modern icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* --------------------------------------------------
+       CSS 디자인 시스템 & 테마 설정 (어두운 모드, 글래스모피즘)
+       -------------------------------------------------- */
+    :root {
+      --bg-color: #0b0f19;
+      --card-bg: rgba(22, 30, 49, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+      --hover-gradient: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --text-dim: #6b7280;
+      --accent: #6366f1;
+      --danger: #ef4444;
+      --success: #10b981;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', 'Noto Sans KR', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-image:
+        radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.15) 0%, transparent 40%);
+      background-attachment: fixed;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 850px;
+      margin-top: 1rem;
+    }
+
+    /* 헤더 스타일 */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2.5rem;
+      width: 100%;
+    }
+
+    .logo-area {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .logo-area h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.05em;
+    }
+
+    .logo-area p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* 버튼 스타일 */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      border: none;
+      color: white;
+    }
+
+    .btn-primary {
+      background: var(--primary-gradient);
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: var(--hover-gradient);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+    }
+
+    .btn-danger:hover {
+      background: var(--danger);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+
+    /* 진행 상황 미니바 */
+    .progress-bar-container {
+      background: var(--card-bg);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 0.8rem 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+    }
+
+    .progress-text {
+      font-weight: 500;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .progress-badge {
+      background: var(--primary-gradient);
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    /* 게시글 목록 카드 */
+    .post-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .post-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .post-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 4px;
+      background: var(--primary-gradient);
+      opacity: 0;
+      transition: var(--transition);
+    }
+
+    .post-card:hover {
+      transform: translateY(-4px) scale(1.01);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+      border-color: rgba(99, 102, 241, 0.3);
+    }
+
+    .post-card:hover::before {
+      opacity: 1;
+    }
+
+    .post-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .post-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: white;
+      transition: var(--transition);
+    }
+
+    .post-card:hover .post-title {
+      color: var(--accent);
+    }
+
+    .post-meta {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .post-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .post-preview {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* 텅 빈 리스트 */
+    .empty-state {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px dashed var(--card-border);
+      border-radius: 16px;
+      padding: 4rem 2rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      color: var(--text-muted);
+    }
+
+    .empty-icon {
+      color: var(--text-dim);
+      background: rgba(255, 255, 255, 0.03);
+      padding: 1rem;
+      border-radius: 50%;
+    }
+
+    /* 모달 레이아웃 */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(11, 15, 25, 0.8);
+      backdrop-filter: blur(8px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-content {
+      background: #141b2d;
+      border: 1px solid var(--card-border);
+      width: 100%;
+      max-width: 600px;
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      transform: translateY(20px);
+      transition: transform 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .modal.active .modal-content {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: white;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .close-btn:hover {
+      color: white;
+    }
+
+    /* 폼 입력창 스타일 */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    input,
+    textarea {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      color: white;
+      font-size: 0.95rem;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    input:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      background: rgba(99, 102, 241, 0.05);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 150px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    /* 상세 보기 화면 커스텀 */
+    .detail-body {
+      color: var(--text-main);
+      line-height: 1.7;
+      font-size: 1.05rem;
+      white-space: pre-wrap;
+      padding: 1rem 0;
+      border-top: 1px solid var(--card-border);
+      border-bottom: 1px solid var(--card-border);
+      min-height: 120px;
+    }
+
+    .detail-meta {
+      display: flex;
+      gap: 1.5rem;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    /* 토스트 팝업 (성공/오류 메시지용) */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #1e293b;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: var(--transition);
+    }
+
+    .toast.active {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast-success {
+      border-left: 4px solid var(--success);
+    }
+
+    .toast-error {
+      border-left: 4px solid var(--danger);
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <!-- 헤더 영역 -->
+    <header>
+      <div class="logo-area">
+        <h1>BOARD PROTO</h1>
+        <p>코딩 확인용 웹 프로그램 시각 프로토타입</p>
+      </div>
+      <button class="btn btn-primary" onclick="openWriteModal()">
+        <i data-lucide="plus-circle"></i>새 글 작성
+      </button>
+    </header>
+
+    <!-- 진행 상황 표시 바 (사용자 눈으로 직접 확인) -->
+    <div class="progress-bar-container">
+      <div class="progress-text">
+        <i data-lucide="clipboard-list" style="color: var(--accent);"></i>
+        현재 개발 상태: <span class="progress-badge">3단계 백엔드 연동 완료</span>
+      </div>
+      <div style="color: var(--text-muted); font-size: 0.8rem;">
+        작성된 글은 백엔드 API 서버(http://localhost:5001)에 실시간으로 기록됩니다.
+      </div>
+    </div>
+
+    <!-- 게시글 목록 영역 -->
+    <div id="postList" class="post-list">
+      <!-- 동적으로 게시글이 렌더링되는 위치입니다. -->
+    </div>
+  </div>
+
+  <!-- 1. 글 작성 및 수정 모달 -->
+  <div id="writeModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalTitle">새 글 작성하기</h2>
+        <button class="close-btn" onclick="closeWriteModal()">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="postAuthor">작성자</label>
+          <input type="text" id="postAuthor" placeholder="이름을 입력하세요">
+        </div>
+        <div class="form-group">
+          <label for="postPassword">비밀번호 (수정/삭제용)</label>
+          <input type="password" id="postPassword" placeholder="비밀번호를 입력하세요">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="postTitle">글 제목</label>
+        <input type="text" id="postTitle" placeholder="제목을 입력하세요">
+      </div>
+
+      <div class="form-group">
+        <label for="postContent">본문 내용</label>
+        <textarea id="postContent" placeholder="여기에 내용을 입력하세요..."></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeWriteModal()">취소</button>
+        <button class="btn btn-primary" id="saveBtn" onclick="savePost()">등록하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 글 상세 보기 모달 -->
+  <div id="detailModal" class="modal">
+    <div class="modal-content" style="max-width: 650px;">
+      <div class="modal-header">
+        <h2 class="modal-title" id="detailTitle">글 제목</h2>
+        <button class="close-btn" onclick="closeDetailModal()">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="detail-meta">
+        <span class="post-meta-item"><i data-lucide="user" size="16"></i> <span id="detailAuthor">작성자</span></span>
+        <span class="post-meta-item"><i data-lucide="calendar" size="16"></i> <span id="detailDate">날짜</span></span>
+        <span class="post-meta-item"><i data-lucide="eye" size="16"></i> 조회 <span id="detailViews">0</span></span>
+      </div>
+
+      <div class="detail-body" id="detailContent">
+        상세 본문 내용이 출력되는 영역입니다.
+      </div>
+
+      <div class="modal-actions" style="justify-content: space-between;">
+        <button class="btn btn-secondary" onclick="closeDetailModal()"><i data-lucide="arrow-left"></i> 목록으로</button>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-secondary" id="editBtn" onclick="askPasswordAction('edit')"><i
+              data-lucide="edit-3"></i> 수정</button>
+          <button class="btn btn-danger" id="deleteBtn" onclick="askPasswordAction('delete')"><i
+              data-lucide="trash-2"></i> 삭제</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 비밀번호 확인용 간이 모달 -->
+  <div id="passwordModal" class="modal" style="z-index: 110;">
+    <div class="modal-content" style="max-width: 380px;">
+      <div class="modal-header">
+        <h3 class="modal-title">비밀번호 확인</h3>
+        <button class="close-btn" onclick="closePasswordModal()">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <p style="font-size: 0.9rem; color: var(--text-muted);">글을 작성할 때 설정했던 비밀번호를 입력해 주세요.</p>
+
+      <div class="form-group">
+        <input type="password" id="confirmPasswordInput" placeholder="비밀번호 입력">
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closePasswordModal()">취소</button>
+        <button class="btn btn-primary" onclick="submitPasswordConfirm()">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 토스트 알림창 -->
+  <div id="toast" class="toast">
+    <i id="toastIcon" data-lucide="info"></i>
+    <span id="toastMessage">알림 내용</span>
+  </div>
+
+  <script>
+    // --------------------------------------------------
+    // JavaScript 애플리케이션 로직 (Backend API 연동)
+    // --------------------------------------------------
+
+    const API_BASE_URL = '/api';
+    let posts = [];
+    let currentViewingPostId = null;
+    let passwordActionType = ''; // 'edit' or 'delete'
+
+    // 초기 실행
+    window.addEventListener('DOMContentLoaded', () => {
+      loadPosts();
+      lucide.createIcons(); // 아이콘 그리기
+    });
+
+    // 백엔드 API에서 글 목록 불러오기
+    async function loadPosts() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/posts`);
+        if (!res.ok) throw new Error("게시글 목록을 불러오는데 실패했습니다.");
+        posts = await res.json();
+        renderPosts();
+      } catch (error) {
+        console.error(error);
+        showToast("서버와 통신하는 중 오류가 발생했습니다.", "error");
+      }
+    }
+
+    // 목록 렌더링
+    function renderPosts() {
+      const listContainer = document.getElementById('postList');
+      listContainer.innerHTML = '';
+
+      if (posts.length === 0) {
+        listContainer.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">
+              <i data-lucide="folder-open" size="36"></i>
+            </div>
+            <h3>등록된 게시글이 없습니다.</h3>
+            <p>우측 상단의 '새 글 작성' 버튼을 눌러 첫 번째 게시글의 주인이 되어보세요!</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      // 최근 글이 위로 오도록 역순 출력
+      [...posts].reverse().forEach(post => {
+        const card = document.createElement('div');
+        card.className = 'post-card';
+        card.onclick = () => viewPostDetail(post.id);
+
+        card.innerHTML = `
+          <div class="post-header">
+            <h3 class="post-title">${escapeHtml(post.title)}</h3>
+          </div>
+          <p class="post-preview">${escapeHtml(post.content)}</p>
+          <div class="post-meta">
+            <span class="post-meta-item"><i data-lucide="user" size="14"></i>${escapeHtml(post.author)}</span>
+            <span class="post-meta-item"><i data-lucide="calendar" size="14"></i>${post.date}</span>
+            <span class="post-meta-item"><i data-lucide="eye" size="14"></i>조회 ${post.views}</span>
+          </div>
+        `;
+        listContainer.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    // XSS 방지를 위한 텍스트 이스케이프
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // 모달 관리 함수들
+    function openWriteModal(postId = null) {
+      const modal = document.getElementById('writeModal');
+      const title = document.getElementById('modalTitle');
+      const saveBtn = document.getElementById('saveBtn');
+
+      if (postId) {
+        // 수정 모드
+        const post = posts.find(p => p.id === postId);
+        title.innerText = "게시글 수정하기";
+        document.getElementById('postAuthor').value = post.author;
+        document.getElementById('postAuthor').disabled = true; // 수정 시 이름 고정
+        document.getElementById('postPassword').value = '';
+        document.getElementById('postPassword').placeholder = "수정할 때도 비밀번호 확인이 필요합니다";
+        document.getElementById('postTitle').value = post.title;
+        document.getElementById('postContent').value = post.content;
+        saveBtn.innerText = "수정 완료";
+        saveBtn.onclick = () => savePost(postId);
+      } else {
+        // 신규 작성 모드
+        title.innerText = "새 글 작성하기";
+        document.getElementById('postAuthor').value = '';
+        document.getElementById('postAuthor').disabled = false;
+        document.getElementById('postPassword').value = '';
+        document.getElementById('postPassword').placeholder = "비밀번호를 입력하세요";
+        document.getElementById('postTitle').value = '';
+        document.getElementById('postContent').value = '';
+        saveBtn.innerText = "등록하기";
+        saveBtn.onclick = () => savePost();
+      }
+      modal.classList.add('active');
+    }
+
+    // 글 수정 모달 닫기
+    function closeWriteModal() {
+      document.getElementById('writeModal').classList.remove('active');
+    }
+
+    // 게시글 등록/수정 저장
+    async function savePost(editPostId = null) {
+      const author = document.getElementById('postAuthor').value.trim();
+      const password = document.getElementById('postPassword').value.trim();
+      const title = document.getElementById('postTitle').value.trim();
+      const content = document.getElementById('postContent').value.trim();
+
+      // 필수 체크
+      if (!author || !password || !title || !content) {
+        showToast("모든 항목을 올바르게 채워주세요.", "error");
+        return;
+      }
+
+      try {
+        if (editPostId) {
+          // 수정 모드
+          const response = await fetch(`${API_BASE_URL}/posts/${editPostId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, content, password })
+          });
+
+          if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.error || "수정에 실패했습니다.");
+          }
+
+          showToast("게시글이 성공적으로 수정되었습니다.", "success");
+        } else {
+          // 신규 추가 모드
+          const response = await fetch(`${API_BASE_URL}/posts`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, content, author, password })
+          });
+
+          if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.error || "등록에 실패했습니다.");
+          }
+
+          showToast("게시글이 새로 등록되었습니다.", "success");
+        }
+
+        await loadPosts();
+        closeWriteModal();
+        if (editPostId) {
+          closeDetailModal();
+        }
+      } catch (error) {
+        showToast(error.message, "error");
+      }
+    }
+
+    // 글 상세 보기
+    async function viewPostDetail(id) {
+      currentViewingPostId = id;
+
+      try {
+        // 조회수 증가 API 호출
+        await fetch(`${API_BASE_URL}/posts/${id}/view`, { method: 'POST' });
+
+        // 게시글 상세 조회 API 호출
+        const response = await fetch(`${API_BASE_URL}/posts/${id}`);
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.error || "게시글을 찾을 수 없습니다.");
+        }
+
+        const post = await response.json();
+
+        document.getElementById('detailTitle').innerText = post.title;
+        document.getElementById('detailAuthor').innerText = post.author;
+        document.getElementById('detailDate').innerText = post.date;
+        document.getElementById('detailViews').innerText = post.views;
+        document.getElementById('detailContent').innerText = post.content;
+
+        document.getElementById('detailModal').classList.add('active');
+
+        // 목록도 최신 조회수를 반영하기 위해 다시 로드
+        loadPosts();
+      } catch (error) {
+        showToast(error.message, "error");
+      }
+    }
+
+    function closeDetailModal() {
+      document.getElementById('detailModal').classList.remove('active');
+      currentViewingPostId = null;
+    }
+
+    // 비밀번호 입력 모달 띄우기
+    function askPasswordAction(actionType) {
+      passwordActionType = actionType;
+      document.getElementById('confirmPasswordInput').value = '';
+      document.getElementById('passwordModal').classList.add('active');
+    }
+
+    function closePasswordModal() {
+      document.getElementById('passwordModal').classList.remove('active');
+    }
+
+    // 비밀번호 체크 제출
+    async function submitPasswordConfirm() {
+      const enteredPassword = document.getElementById('confirmPasswordInput').value.trim();
+
+      if (!enteredPassword) {
+        showToast("비밀번호를 입력해 주세요.", "error");
+        return;
+      }
+
+      try {
+        // 비밀번호 검증 API 호출
+        const response = await fetch(`${API_BASE_URL}/posts/${currentViewingPostId}/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: enteredPassword })
+        });
+
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.error || "비밀번호가 일치하지 않습니다.");
+        }
+
+        closePasswordModal();
+
+        if (passwordActionType === 'edit') {
+          // 수정창 띄우기
+          openWriteModal(currentViewingPostId);
+          // 비밀번호 필드를 방금 검증한 비밀번호로 채워두기 (사용자 편의성)
+          document.getElementById('postPassword').value = enteredPassword;
+        } else if (passwordActionType === 'delete') {
+          // 삭제 API 호출
+          const deleteResponse = await fetch(`${API_BASE_URL}/posts/${currentViewingPostId}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: enteredPassword })
+          });
+
+          if (!deleteResponse.ok) {
+            const errData = await deleteResponse.json();
+            throw new Error(errData.error || "삭제에 실패했습니다.");
+          }
+
+          await loadPosts();
+          closeDetailModal();
+          showToast("글이 삭제되었습니다.", "success");
+        }
+      } catch (error) {
+        showToast(error.message, "error");
+      }
+    }
+
+    // 토스트 알림창 띄우기
+    function showToast(message, type = "success") {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMessage');
+      const toastIcon = document.getElementById('toastIcon');
+
+      toastMsg.innerText = message;
+      toast.className = `toast toast-${type} active`;
+
+      if (type === "success") {
+        toastIcon.setAttribute('data-lucide', 'check-circle');
+      } else {
+        toastIcon.setAttribute('data-lucide', 'alert-triangle');
+      }
+      lucide.createIcons();
+
+      setTimeout(() => {
+        toast.classList.remove('active');
+      }, 3000);
+    }
+  </script>
+</body>
+
+</html>
